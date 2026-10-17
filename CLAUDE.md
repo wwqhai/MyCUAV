@@ -17,6 +17,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File run.ps1 -Class Verify -In "<
 - 改报告里的数量、假设后，同步改对应的 B 块常量表再重跑。
 
 ## 约定
-- 报告与模型保持一致：能力 C1~C9，活动 OA1~OA17，信息交换 IE1~IE13，服务 S1~S10，需求 R1~R14。
+- 报告与模型保持一致：能力 C1~C9，活动 OA1~OA17，信息交换 IE1~IE13，服务 S1~S10，需求 R1~R14，场景 SC1、想定 V1~V3、目标 G1~G3、任务线程 MT1~MT5、MET1。
 - `D.java` 的 `dropAuto()` 用于清理创建行为类视图时自动产生的空元素，新增活动图/状态图/顺序图时需调用。
 - `能力与需求追溯` 视图名不能改，`PostMatrix` 按此名称重配矩阵。

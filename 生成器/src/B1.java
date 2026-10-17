@@ -34,6 +34,7 @@ public class B1 {
         summary();
         dictionary();
         strategy();
+        scenario();
     }
 
     static void summary() {
@@ -89,5 +90,101 @@ public class B1 {
         }
         U.log("B1 完成: 能力 " + CAPS.length + " 个，词条 " + TERMS.length + " 个，依赖 " + deps.length + " 条");
     }
-}
 
+    /** 想定片段：编号, 名称, 威胁特征 */
+    static final String[][] VIG = {
+        {"V1", "单架次侦察渗透", "单目标、低速、低空；以 ISR 为主"},
+        {"V2", "多批次集群突防", "巡飞弹 3 枚协同；可能携带小型载荷；雷达难以探测"},
+        {"V3", "伴随干扰的饱和攻击(扩展)", "多方向同时进入；强电磁干扰掩护；原场景输入未涉及，待确认"}};
+
+    /** 场景目标：编号, 名称, 度量 */
+    static final String[][] GOALS = {
+        {"G1", "探测告警时效性", "从首次探测到生成告警的时间 ≤ 30 s"},
+        {"G2", "识别正确性", "目标类型识别正确率 ≥ 90%"},
+        {"G3", "拦截有效性与安全性", "对确认威胁拦截成功率 ≥ 85%；拦截导致非目标损失事件 = 0"}};
+
+    /** 任务线程(不依赖具体装备)：编号, 名称 */
+    static final String[][] MT = {
+        {"MT1", "预警探测"}, {"MT2", "目标识别与分类"}, {"MT3", "威胁评估与决策授权"},
+        {"MT4", "拦截/驱离行动"}, {"MT5", "效果评估与再交战决策"}};
+
+    /** 想定片段考验的目标 */
+    static final String[][] V2G = {{"V1", "G1"}, {"V1", "G2"}, {"V2", "G2"}, {"V2", "G3"},
+        {"V3", "G1"}, {"V3", "G2"}, {"V3", "G3"}};
+    /** 任务线程实现的目标 */
+    static final String[][] MT2G = {{"MT1", "G1"}, {"MT2", "G2"}, {"MT3", "G1"}, {"MT3", "G3"},
+        {"MT4", "G3"}, {"MT5", "G3"}};
+
+    static com.nomagic.uml2.ext.magicdraw.mdprofiles.Profile extProfile;
+
+    /** 创建自定义构造型(UAF 1.2 没有 Mission* 原生元素)，放入模型内的“CUAV扩展”Profile；失败返回 null，元素退化为普通类。 */
+    static com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype custom(String name, String base) {
+        try {
+            if (extProfile == null) {
+                extProfile = U.put(U.F.createProfileInstance(), U.P.getPrimaryModel());
+                extProfile.setName("CUAV扩展");
+                com.nomagic.uml2.ext.magicdraw.mdprofiles.ProfileApplication pa = U.F.createProfileApplicationInstance();
+                pa.setApplyingPackage(U.P.getPrimaryModel());
+                pa.setAppliedProfile(extProfile);
+            }
+            Class meta = com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper.getMetaClassByName(U.P, base);
+            com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype s =
+                com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper.createStereotype(extProfile, name, java.util.Arrays.asList(meta));
+            U.log("自定义构造型 " + name + " 位于 " + (s.getOwner() == null ? "?" : s.getOwner().getHumanName()));
+            return s;
+        } catch (Throwable t) {
+            U.log("警告: 创建自定义构造型失败 " + name + " : " + t);
+            return null;
+        }
+    }
+
+    /** St-Tx 场景与目标分解图：场景→想定片段→目标←任务线程←任务工程线程(MET)。 */
+    static void scenario() {
+        Package tx = U.pkg("Strategy", "Strategic Taxonomy");
+        com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype stMT = custom("MissionThread", "Class");
+        com.nomagic.uml2.ext.magicdraw.mdprofiles.Stereotype stMET = custom("MissionEngineeringThread", "Class");
+
+        Class sc = U.uaf(tx, "sc:SC1", "SC1 重点区域反无人机防护", "StrategicPhase");
+        U.attrS(sc, "定义", "在重点区域(武器仓库)对敌方无人机实施探测、识别、决策与拦截的端到端任务情境");
+        for (String[] v : VIG) {
+            Class k = U.uaf(tx, "vig:" + v[0], v[0] + " " + v[1], "StrategicPhase");
+            U.attrS(k, "威胁特征", v[2]);
+            U.comp(sc, k, v[0], null);
+                    }
+        for (String[] g : GOALS) {
+            Class k = U.uaf(tx, "goal:" + g[0], g[0] + " " + g[1], "EnterpriseGoal");
+            U.attrS(k, "度量", g[2]);
+        }
+        for (String[] m : MT) {
+            Class k = U.cls(tx, "mt:" + m[0], m[0] + " " + m[1], null, null);
+            if (stMT != null) com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper.addStereotype(k, stMT);
+        }
+        Class met = U.cls(tx, "met:MET1", "MET1 基线反无人机方案", null, null);
+        if (stMET != null) com.nomagic.uml2.ext.jmi.helpers.StereotypesHelper.addStereotype(met, stMET);
+        U.attrS(met, "探测资源", "低空雷达 + 无源电侦 + 光电 + 声学阵列(边缘 AI 盒子融合)");
+        U.attrS(met, "决策节点", "指挥所(AI 指挥系统 + 指挥员)");
+        U.attrS(met, "拦截资源", "单兵反无人机发射枪(捕获网 / 近炸弹)");
+        U.attrS(met, "评估节点", "指挥所态势显示与效果评估");
+
+        D d = new D("Strategic Taxonomy", tx, "场景与目标分解", 1500);
+        d.at(U.get("sc:SC1"), 560, 30, 400, 110);
+        int[] vx = {100, 560, 1020};
+        for (int i = 0; i < VIG.length; i++) d.at(U.get("vig:" + VIG[i][0]), vx[i], 230, 380, 110);
+        for (int i = 0; i < GOALS.length; i++) d.at(U.get("goal:" + GOALS[i][0]), vx[i], 440, 380, 110);
+        for (int i = 0; i < MT.length; i++) d.at(U.get("mt:" + MT[i][0]), 30 + i * 290, 660, 260, 60);
+        d.at(U.get("met:MET1"), 480, 800, 560, 160);
+
+        int n = 0;
+        // 场景→想定片段的组合关联在模型中，MagicDraw API 无法在图中为其连线(已三次尝试均失败)，需在界面中拖入关系
+        for (String[] e : V2G) { trace(d, tx, "vig:" + e[0], "goal:" + e[1]); n++; }
+        for (String[] e : MT2G) { trace(d, tx, "mt:" + e[0], "goal:" + e[1]); n++; }
+        for (String[] m : MT) { trace(d, tx, "met:MET1", "mt:" + m[0]); n++; }
+        U.log("B1 场景与目标分解: 想定 " + VIG.length + "，目标 " + GOALS.length + "，任务线程 " + MT.length + "，追溯 " + n + " 条");
+    }
+
+    static void trace(D d, Package owner, String from, String to) {
+        com.nomagic.uml2.ext.magicdraw.classes.mddependencies.Abstraction a =
+            U.abs(U.get(from), U.get(to), owner, "UML Standard Profile", "Trace");
+        d.link(a, U.get(from), U.get(to));
+    }
+}
