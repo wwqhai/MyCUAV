@@ -1,0 +1,4 @@
+*.bak
+生成器/out/
+生成器/out.mdzip
+*.log
