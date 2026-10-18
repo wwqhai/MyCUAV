@@ -9,7 +9,7 @@
 
 ## 项目背景
 
-- 场景：保护 500 m × 500 m 的武器仓库，防护圈由内向外布置雷达与电侦、光电、声学阵列和单兵发射枪，另设 1 处指挥所；敌方为 1 架 FPV 无人机和 3 枚巡飞弹。
+- 场景：保护 500 m × 500 m 的武器仓库，防护圈由内向外布置雷达与电侦、光电、声学阵列和拦截处置手段（单兵发射枪、干扰机、拦截无人机），另设 1 处指挥所；敌方为 1 架 FPV 无人机和 3 枚巡飞弹。
 - 方法：UAF 1.2（统一架构框架），从能力、作战、服务、资源到实际资源建立可追溯的架构链。
 - 环境：Claude Code + MagicDraw 2022x。换用其他环境或工具时，Skills 可能需要做些微调。
 
@@ -19,10 +19,11 @@
 MyCUAV/
 ├── CLAUDE.md                              项目约定（Claude Code 自动加载）
 ├── CUAV提示词示例.md                       场景输入（装备参数、敌方、作战流程）
-├── 重点区域反无人机作战场景设计分析报告.md     UAF 1.2 分析报告（草案 V0.1）
-├── 重点区域反无人机.mdzip                   生成的 MagicDraw 工程
+├── 重点区域反无人机作战场景设计分析报告.md     UAF 1.2 分析报告（草案 V0.2）
+├── D0-核心思路.md ~ D7-…md                  任务工程（ME）设计说明，开头写明状态
+├── 重点区域反无人机.mdzip                   生成的 MagicDraw 工程（V0.2）
 ├── 生成器/                                 模型生成器
-│   ├── src/                               Java 源码（Gen、D、U、Verify、B1~B5）
+│   ├── src/                               Java 源码（Gen、D、U、Verify、B1~B6）
 │   ├── post/PostMatrix.java               依赖矩阵后处理
 │   └── go.ps1 / post.ps1 / run.ps1        编译、后处理、运行脚本
 └── .claude/skills/
@@ -39,6 +40,7 @@ MyCUAV/
 | `B3` | 作战活动、流程 |
 | `B4` | 服务、人员、资源 |
 | `B5` | 需求、实际资源、约束、状态、时序 |
+| `B6` | 任务工程链：OA→MT 追溯、MET 资源流程、端到端连接图、度量（MOE/MOP/TPM） |
 | `D` / `U` | 公共辅助（含 `dropAuto()`） |
 | `Gen` / `Verify` | 生成入口 / 验证入口 |
 
@@ -46,7 +48,7 @@ MyCUAV/
 
 ### uaf12-scenario-analysis
 
-输入装备参数、敌我双方和作战流程，输出结构化的分析报告和 MagicDraw 建模方案。流程分阶段推进，每个阶段有完成标准，保证追溯链不断。`references/` 下有场景采集、视图命名、报告模板和 MagicDraw 操作流程。`example-regional-air-defense.md` 是区域防空的示例。
+输入装备参数、敌我双方和作战流程，输出结构化的分析报告和 MagicDraw 建模方案，并含任务工程（MT/MET、MOE/MOP）扩展和变更管理。流程分阶段推进，每个阶段有完成标准，保证追溯链不断。`references/` 下有场景采集、视图命名、报告模板和 MagicDraw 操作流程。`example-regional-air-defense.md` 是区域防空的示例。
 
 ### uaf-skills
 
@@ -110,14 +112,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File run.ps1 -Class Verify -In "<
 
 | 类别 | 编号 |
 | ---- | ---- |
-| 能力 | C1~C9 |
-| 作战活动 | OA1~OA17 |
-| 信息交换 | IE1~IE13 |
-| 服务 | S1~S10 |
-| 需求 | R1~R14 |
+| 能力 | C1~C11 |
+| 作战执行者 | AC1~AC12 |
+| 作战活动 | OA1~OA19 |
+| 信息交换 | IE1~IE19 |
+| 服务 | S1~S12 |
+| 资源 | RS1~RS11 |
+| 资源交换 | RF1~RF12 |
+| 需求 | R1~R16 |
+| 场景、想定、目标 | SC1、V1~V3、G1~G3 |
+| 任务线程、任务 | TH1、MT1~MT5、MET1 |
+| 度量 | MOE1~4、MOP1~10、TPM1~17 |
+
+报告 V0.2 增补了干扰机 5 部、拦截无人机 10 架，其性能参数用代号 P_JAM_*、P_INT_* 表示，不设数值。任务工程链的设计见 `D0-核心思路.md` ~ `D7-追溯关系矩阵：战略—运营—资源.md`。
 
 - 新增活动图、状态图或顺序图时，需调用 `D.java` 的 `dropAuto()`，清理创建行为类视图时自动产生的空元素。
-- 视图名 `能力与需求追溯` 不能改，`PostMatrix` 按此名称重配矩阵。
+- 视图名 `能力与需求追溯`、`作战活动与任务线程追溯`、`度量与目标追溯`、`度量与作战活动追溯`、`度量与资源追溯` 不能改，`PostMatrix` 按名称重配矩阵。
 
 ## 经验与已知限制
 
@@ -131,5 +141,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File run.ps1 -Class Verify -In "<
 
 1. 用新的场景描述替换 `CUAV提示词示例.md`。
 2. 用 `uaf12-scenario-analysis` 生成新报告。
-3. 按新报告修改 `生成器/src/B1~B5.java` 中的常量表和编号。
+3. 按新报告修改 `生成器/src/B1~B6.java` 中的常量表和编号。
 4. 重新运行三步生成流程，并在 MagicDraw 中人工检查视图。

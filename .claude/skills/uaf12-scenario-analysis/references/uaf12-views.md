@@ -22,6 +22,7 @@ UAF 1.2 以“视点(行)× 方面(列)”组织视图,视图编号 = 视点-方
 | 人员       | 分类、结构视图                                         | 指挥员等角色及其与资源的关系                                 |
 | 资源       | Rs-Tx、Rs-Sr、Rs-Cn、Rs-Pr、Rs-Tr(Rs-Sq 若插件提供)    | 装备类型、结构与接口、系统功能、资源追溯                     |
 | 实际资源   | Ar-Sr、Ar-Tr                                           | 装备实例、部署、实例到类型的追溯                             |
+| 参数       | Pm-Me                                                  | MOE/MOP/TPM 度量(任务工程扩展)                              |
 
 需求不是 UAF 1.2 的独立视点:用需求元素建模,并通过各 Tr 视图与 Satisfy/Verify 关系挂接。
 
@@ -32,7 +33,10 @@ UAF 1.2 以“视点(行)× 方面(列)”组织视图,视图编号 = 视点-方
 | 作战视点的 8 个视图(Op-Tx/Sr/Cn/Pr/St/Sq/Ct/Tr) | 已核实                 | UAF 1.2 作战视点列表(Sparx EA 文档)。顺序视图是 Op-Sq,Op-Tr 是追溯 |
 | 网格的视点×方面结构                             | 已核实                 | 多家工具文档一致                                             |
 | Sv、Rs、St、Ar 各视点下的 Sr/Cn/Pr/Tr 等        | 按网格推定             | 命名规律一致,未逐个对照规范原文,建模前在插件中核对           |
-| Rs-Sq 是否提供                                  | 未核实                 | 报告中标注“如插件提供”                                       |
+| Rs-Sq 是否提供                                  | 已检出                 | 插件中可创建 `Resources Sequences`(2022x 实测);本场景是否使用另定 |
+| Rs-Pr 资源流程                                  | 已核实                 | `Resources Process Flow` 可创建;动作用 FunctionAction         |
+| Pm-Me 度量                                      | 已核实                 | 1.2 中是表:`Typical Measurements Table`、`Actual Measurements Table`;不是矩阵 |
+| Internal Connectivity                           | 已检出,未实践          | `Operational/Resources Internal Connectivity` 类型存在,本套件未建过 |
 | 概述与摘要 Sm、词典 Sm-Tx、架构管理 Am          | 未核实                 | 资料中 Sm-Ov/Sm-Tx 出现于较早或其他工具文档;1.2 中可能归入 Am 或名称有调整。让用户查看插件实际提供的“概述/词典”类图,再定稿 |
 | 人员视点缩写(Pr 或 Ps)                          | 未核实                 | 以插件为准                                                   |
 | 安全 Sc、项目 Pj、标准 Sd                       | 存在但本技能默认不展开 | 场景有安全、项目、标准要求时再加                             |

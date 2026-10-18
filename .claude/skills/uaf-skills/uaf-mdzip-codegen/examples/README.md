@@ -13,3 +13,14 @@
 另见 `../templates/post/PostMatrix.java`：矩阵范围设置，以及把"能力×需求追溯"重配为 Capability × Requirement、准则 Satisfy。
 
 写自己项目时：保持"key 登记 → 引用"的结构，把常量表（如 `CAPS`、`PERF`、`IE`）改成自己文档的内容。
+
+## B6（反无人机项目，任务工程链）
+
+B6 不属于区域防空案例，来自反无人机项目，依赖 B1（目标 `goal:`、任务 `mt:`）、B3（`oa:`）、B4（`rs:`、`fn:`、`rf:`）已登记的 key，必须在它们之后运行。
+
+| 部分 | 内容 | 值得参考的写法 |
+|---|---|---|
+| `mtTrace` | OA→MT 的 Trace，并建一张固定名字的矩阵视图 | 矩阵视图名固定，由 PostMatrix 重配 |
+| `measurements` | MOE/MOP/TPM 度量集、度量、追溯、典型度量表、三张度量矩阵 | `MeasurementSet`/`Measurement`；`Typical Measurements Table` 的行与范围 |
+| `metFlows` | 资源泳道流程（`Resources Process Flow`） | 节点/边表 + `chain` + `escalation` 子图；动作引用已有功能 |
+| `e2e` | 端到端连接派生图 | 复用已有 `InformationFlow`，只换布局 |

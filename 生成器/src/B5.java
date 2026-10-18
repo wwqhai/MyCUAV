@@ -31,12 +31,14 @@ public class B5 {
         {"R11", "雷达、电侦应对敌机持续跟踪探测", "C6", "OA5"},
         {"R12", "雷达无法探测时，应由电侦和声学补盲并融合判别", "C2,C4,C5", "OA2,OA14,OA3"},
         {"R13", "指挥所应显示全流程态势、报告威胁等级并评估拦截效果", "C7", "OA15,OA17"},
-        {"R14", "各设备间应提供数据通信(假设 A9)", "C7", "OA6"}};
+        {"R14", "各设备间应提供数据通信(假设 A9)", "C7", "OA6"},
+        {"R15", "系统应对依赖射频链路的目标实施干扰或驱离", "C10", "OA18"},
+        {"R16", "系统应能以拦截无人机对来袭目标实施空中拦截", "C11", "OA19"}};
 
     /** 资源满足需求 */
     static final String[][] RS_REQ = {
         {"r_radar", "R1,R11"}, {"r_esm", "R2,R11,R12"}, {"r_eo", "R3"}, {"r_aco", "R4,R12"},
-        {"r_edge", "R5,R6,R7,R12"}, {"r_c2", "R8,R9,R13"}, {"r_cp", "R8"}, {"r_gun", "R9,R10"}, {"r_net", "R14"}};
+        {"r_edge", "R5,R6,R7,R12"}, {"r_c2", "R8,R9,R13"}, {"r_cp", "R8"}, {"r_gun", "R9,R10"}, {"r_net", "R14"}, {"r_jam", "R15"}, {"r_uav", "R16"}};
 
     static void run() {
         requirements();
@@ -83,7 +85,9 @@ public class B5 {
             {"EO", 5, "rs:r_eo", "识别距离 6 km"}, {"ACO", 10, "rs:r_aco", "识别距离 2 km"},
             {"EDGE", 25, "rs:r_edge", "配装对应：1~5 雷达、6~10 电侦(假设A1)、11~15 光电、16~25 声学"},
             {"GUN", 20, "rs:r_gun", "捕获网射界 200 m；近炸弹射界 1000 m；单兵各携带 1 把"},
-            {"C2", 1, "rs:r_c2", "AI 指挥系统"}, {"CP", 1, "rs:r_cp", "指挥所"}, {"NET", 1, "rs:r_net", "抽象通信网络(假设A9)"}};
+            {"C2", 1, "rs:r_c2", "AI 指挥系统"}, {"CP", 1, "rs:r_cp", "指挥所"}, {"NET", 1, "rs:r_net", "抽象通信网络(假设A9)"},
+            {"JAM", 5, "rs:r_jam", "参数代号 P_JAM_R、P_JAM_T、P_JAM_W、P_JAM_P，取值待定(A13)"},
+            {"INT", 10, "rs:r_uav", "参数代号 P_INT_V、P_INT_E、P_INT_R、P_INT_T、P_INT_P，取值待定(A13)"}};
         int total = 0;
         for (Object[] sp : spec) {
             Class type = U.get((String) sp[2]);
@@ -120,7 +124,14 @@ public class B5 {
             {"近炸弹射界", "射界 <= 1000 m（输入）", "OA13"},
             {"融合与航迹上报时延上限", "T(OA3)+T(OA4)+T(OA6) <= Tmax（待确认，原文未给出）", "OA3"},
             {"决策与任务下达时延上限", "T(OA9)+T(OA10)+T(OA11) <= Tmax（待确认，原文未给出）", "OA9"},
-            {"发射枪自动部署时延上限", "T(OA12) <= Tmax（待确认，原文未给出）", "OA12"}};
+            {"发射枪自动部署时延上限", "T(OA12) <= Tmax（待确认，原文未给出）", "OA12"},
+            {"干扰作用距离 P_JAM_R", "目标距离 <= P_JAM_R（代号，取值待定，A13）", "OA18"},
+            {"干扰启动时延 P_JAM_T", "T(OA18) = P_JAM_T（代号，取值待定，A13）", "OA18"},
+            {"干扰效果判定时限 P_JAM_W", "干扰超过 P_JAM_W 未奏效则升级为 OA19（A14，取值待定）", "OA18"},
+            {"拦截无人机飞行速度 P_INT_V", "飞行速度 = P_INT_V（代号，取值待定，A13）", "OA19"},
+            {"拦截无人机续航 P_INT_E", "续航时间 = P_INT_E（代号，取值待定，A13）", "OA19"},
+            {"拦截无人机作用半径 P_INT_R", "起降点到拦截点距离 <= P_INT_R（代号，取值待定，A13）", "OA19"},
+            {"拦截无人机起飞准备时间 P_INT_T", "收到任务到起飞 = P_INT_T（代号，取值待定，A13）", "OA19"}};
         for (String[] k : cons) {
             Constraint cn = U.put(U.F.createConstraintInstance(), c);
             cn.setName(k[0]);
@@ -146,7 +157,7 @@ public class B5 {
         Pseudostate init = U.F.createPseudostateInstance();
         init.setKind(PseudostateKindEnum.INITIAL);
         init.setContainer(rg);
-        String[] names = {"未发现", "已探测", "已跟踪", "初判为敌方目标", "已识别", "已判为威胁", "被拦截", "已捕获或摧毁"};
+        String[] names = {"未发现", "已探测", "已跟踪", "初判为敌方目标", "已识别", "已判为威胁", "被干扰", "被拦截", "已捕获或摧毁"};
         Map<String, State> st = new LinkedHashMap<>();
         for (String n : names) {
             State s = U.F.createStateInstance();
@@ -160,8 +171,10 @@ public class B5 {
         String[][] t = {
             {"未发现", "已探测", "雷达/电侦/声学/光电发现"}, {"已探测", "已跟踪", "起批航迹"},
             {"已跟踪", "初判为敌方目标", "边缘盒融合初判"}, {"初判为敌方目标", "已识别", "类型与意图识别"},
-            {"已识别", "已判为威胁", "指挥所威胁评估"}, {"已判为威胁", "被拦截", "下达打击任务并发射"},
-            {"被拦截", "已捕获或摧毁", "捕获/摧毁成功"}, {"被拦截", "已识别", "拦截失败，重新拦截"},
+            {"已识别", "已判为威胁", "指挥所威胁评估"}, {"已判为威胁", "被干扰", "干扰机处置(软杀伤优先)"},
+            {"已判为威胁", "被拦截", "拦截无人机或发射枪处置"}, {"被干扰", "已捕获或摧毁", "失控、返航或坠落"},
+            {"被干扰", "被拦截", "干扰未奏效，升级处置"},
+            {"被拦截", "已捕获或摧毁", "捕获/摧毁成功"}, {"被拦截", "已识别", "拦截失败，重新处置"},
             {"已跟踪", "已探测", "航迹丢失，重新探测"}};
         for (String[] x : t) tr(rg, st.get(x[0]), st.get(x[1]), x[2]);
         tr(rg, st.get("已捕获或摧毁"), fin, null);
@@ -195,17 +208,21 @@ public class B5 {
     static void sequences() {
         Package p = U.pkg("Operational", "Operational Sequences");
         // 序列 A：FPV 无人机
-        seq(p, "FPV 无人机反制时序", new String[]{"fpv", "radar", "esm", "eo", "edge", "cp", "cmdr", "sol"}, new String[][]{
+        seq(p, "FPV 无人机反制时序", new String[]{"fpv", "radar", "esm", "eo", "edge", "cp", "cmdr", "sol", "jam", "air"}, new String[][]{
             {"fpv", "radar", "进入探测区(回波)"}, {"fpv", "esm", "无线电辐射"}, {"radar", "edge", "点迹/航迹 IE2"},
             {"esm", "edge", "信号特征/方位线 IE3"}, {"edge", "cp", "融合航迹、初判 IE7"}, {"eo", "edge", "识别结果 IE4"},
             {"edge", "cp", "4旋翼FPV、侦察意图 IE7"}, {"cp", "cmdr", "作战方案建议 IE9"}, {"cmdr", "cp", "决策指令 IE10"},
-            {"cp", "sol", "打击任务 IE11"}, {"sol", "fpv", "发射捕获网 IE13"}, {"sol", "cp", "捕获结果 IE12"}});
+            {"cp", "jam", "[升级链1] 干扰任务 IE14"}, {"jam", "fpv", "射频干扰 IE18"}, {"jam", "cp", "干扰状态与效果 IE15"},
+            {"cp", "air", "[升级链2] 拦截任务 IE16"}, {"air", "fpv", "空中拦截 IE19"}, {"air", "cp", "起飞与拦截结果 IE17"},
+            {"cp", "sol", "[升级链3] 打击任务 IE11"}, {"sol", "fpv", "发射捕获网 IE13"}, {"sol", "cp", "捕获结果 IE12"}});
         // 序列 B：巡飞弹
-        seq(p, "巡飞弹反制时序", new String[]{"lm", "esm", "edge", "aco", "eo", "cp", "cmdr", "sol"}, new String[][]{
+        seq(p, "巡飞弹反制时序", new String[]{"lm", "esm", "edge", "aco", "eo", "cp", "cmdr", "sol", "jam", "air"}, new String[][]{
             {"lm", "esm", "遥控遥测信号"}, {"esm", "edge", "大致方位 IE3"}, {"edge", "cp", "初判为巡飞弹 IE7"},
             {"lm", "aco", "声学特征"}, {"aco", "edge", "方位角、速度 IE5"}, {"edge", "cp", "航迹更新 IE7"},
             {"cp", "cmdr", "高威胁态势 IE9"}, {"cp", "edge", "调度跟踪移交 IE8"}, {"eo", "edge", "持续跟踪 IE4"},
-            {"cp", "sol", "打击任务 IE11"}, {"sol", "lm", "发射捕获网/近炸弹 IE13"}, {"sol", "cp", "拦截结果 IE12"}});
+            {"cp", "jam", "[升级链1] 干扰任务 IE14"}, {"jam", "lm", "射频干扰 IE18"}, {"jam", "cp", "干扰状态与效果 IE15"},
+            {"cp", "air", "[升级链2] 拦截任务 IE16"}, {"air", "lm", "空中拦截 IE19"}, {"air", "cp", "起飞与拦截结果 IE17"},
+            {"cp", "sol", "[升级链3] 打击任务 IE11"}, {"sol", "lm", "发射捕获网/近炸弹 IE13"}, {"sol", "cp", "拦截结果 IE12"}});
         U.log("B5.sequences 完成");
     }
 

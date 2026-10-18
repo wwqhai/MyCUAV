@@ -1,4 +1,6 @@
 *.bak
-生成器/out/
-生成器/out.mdzip
 *.log
+*.stdout
+生成器/out/
+生成器/post_out/
+生成器/out.mdzip

@@ -17,7 +17,7 @@ description: 用 MagicDraw 2022x OpenAPI 的无界面批处理模式，以官方
   out/ post_out/                         编译输出（可删）
 ```
 
-把本 Skill 的 `templates/` 复制过去：`U.java`（工具）、`D.java`（视图封装）、`Gen.java`（入口，按需登记块）、`run.ps1`/`go.ps1`/`post.ps1`、`post/PostMatrix.java`。`examples/B1~B5.java` 是区域防空的真实案例，照写法写自己的块，**不要原样拷贝内容**。
+把本 Skill 的 `templates/` 复制过去：`U.java`（工具，含 `customStereotype`）、`D.java`（视图封装，含 `dropAuto`）、`Gen.java`（入口，按需登记块）、`run.ps1`/`go.ps1`/`post.ps1`、`post/PostMatrix.java`（按名称重配矩阵的 `CUSTOM` 表）。`examples/B1~B5.java` 是区域防空的真实案例，`examples/B6.java` 是反无人机项目的任务工程链块（OA→MT 追溯、资源泳道流程、端到端连接图、度量），照写法写自己的块，**不要原样拷贝内容**。
 
 ## 一次完整生成（顺序固定）
 
@@ -28,6 +28,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File run.ps1 -Class Verify -In �
 ```
 
 MagicDraw 不在默认位置时，先设置环境变量 `MD_HOME`。每步约 1~3 分钟，后台等待，不要连续轮询。
+
+## 迭代修改与重新生成
+
+模型不手改，改常量表后整体重跑，这样报告、生成器、模型三者一直能对上。
+
+1. 先改文档（场景输入、分析报告），再改生成器常量表（`CAPS`、`PERF`、`IE`、`OA`、`RS`、`REQ` 等），最后重跑三步。
+2. 新增元素类别时，同步检查：对应的映射常量（`MAP`、`EXH`、`SV_CAP`、`RS_CAP`、`RS_REQ`）、图里的位置数组（`pos`、`tpos`，长度要与元素数一致）、流程节点/边表、顺序图消息、`REQ` 与满足关系。
+3. 重跑后读 `gen.log`：不能有“警告”“失败”；`Verify` 的 `ST` 数量要与常量表一致（模板自带的 Measurement、Trace 等也会计入，先记基线再比较增量）。
+4. 文档领先模型时（先改了文档、模型还没重跑），在文档和 `CLAUDE.md` 里写明“模型待同步”，同步完成再删掉这句话。
+5. 编号约定写进项目 `CLAUDE.md`；矩阵视图名固定，改名会让 `PostMatrix` 找不到。
+
+## Windows 编码陷阱（已踩坑）
+
+- 用 `python - <<'EOF'` 在 bash 里直接传含中文的脚本，Python 按控制台代码页（GBK）读 stdin，个别全角标点（如“。”）会被读坏，替换时“找不到字符串”。**改用 UTF-8 文件**：先把脚本写成 `.py` 文件，里面用 `io.open(path, encoding='utf-8')` 读写，再运行。
+- 终端回显中文常是乱码（`javac`、`go.ps1` 的输出尤其明显），不代表文件坏了。结果以 `gen.log`、`post.log`、`ver.log`（UTF-8 文件）为准。
+- 改 `.ps1` 后确认仍是 UTF-8 带 BOM。
 
 ## 运行方式（已踩坑验证）
 
@@ -55,6 +71,42 @@ MagicDraw 不在默认位置时，先设置环境变量 `MD_HOME`。每步约 1~
 - 顺序图：生命线形状用 `createShapeElement`，消息用 `createSequenceMessage(msg, MessageSortEnum.SYNCHCALL, from, to, false, 0, 上一条, 25)`。
 - 需求包：模板没有 `Requirements` 包，自建 `Package` 并 `apply "UAF Packages" "Requirements"`。
 
+## 自定义构造型（UAF 1.2 缺少的概念）
+
+UAF 1.2 没有 Mission*、ForceDesignation 等 1.3 元素。需要时在模型里建一个“扩展”Profile，不要硬套不合适的原生构造型。
+
+- 用 `U.customStereotype("CUAV扩展", "MissionTask", "Class")`：首次调用创建 Profile 并应用到根模型，再在其下建构造型，基类为 UML 元类。
+- **构造型必须挂在自建 Profile 下**。用 `StereotypesHelper.createStereotype(Project, …)` 建的构造型没有 owner，保存后丢失。
+- 使用：`StereotypesHelper.addStereotype(元素, 构造型)`，返回 null 时退化为普通元素并记警告。
+- 依赖矩阵要按它筛选时，`PostMatrix.CUSTOM` 里的 profile 名写 Profile 名称（如 `CUAV扩展`）。
+- 原生元素够用时优先用原生：目标 `EnterpriseGoal`、场景/想定片段 `StrategicPhase`、度量 `Measurement`/`MeasurementSet`。
+
+## 流程图：作战与资源两类
+
+- 作战流程：`Operational Process Flow`，动作 `CallBehaviorAction` + `OperationalActivityAction`，行为指向 `OperationalActivity`，泳道代表执行者（`B3.buildFlow`）。
+- 资源流程：`Resources Process Flow`，流程活动用 `Function`，动作 `CallBehaviorAction` + `FunctionAction`，行为指向资源的系统功能（已在 Rs-Pr 建好的 `Function` 活动），泳道代表资源（`B6.buildFlow`）。**不要为流程另建功能**，复用 Rs-Pr 里已有的，追溯链才不会出现同义重复。
+- 判断分支要写成串联的升级链时，用“判断 → 处置 → 判断奏效？ → 否则进入下一级 Merge”的子图，封装成方法在两张图里复用（见 `B6.escalation`）。
+- 创建流程图后要 `d.dpe.getDiagram().setOwner(流程活动)` 再 `d.dropAuto()`。
+- 节点列号用递增计数，泳道行高 120~140，宽度参数取 ≥ 列数 × 步长。节点很多时图会很宽，属正常。
+
+## 度量（Parameters 视点）
+
+- 度量元素：`MeasurementSet`（DataType）下挂 `Measurement`（Property），取值写在默认值里，说明写成注释。同一层级放一个度量集，放在对应视点的 `* Parameters` 包。
+- 表格视图用 `Typical Measurements Table`（实测可建；`Pm-Me Typical Measurements Table` 这类名称不能用于 `createDiagram`），行为度量集，`scope` 为根模型。表在界面里的显示未验证。
+- MOE/MOP/TPM 不是 UAF 1.2 元素，用编号前缀区分；追溯用 UML `Trace`（client 为下层）。
+- 未给出的数值写“待定”或参数代号，不编造。
+
+## 图里画不出来的关系
+
+- 组合关联（`U.comp`）在模型里正常，但 `createPathElement` 对它抛 `Relationship client must be client's model element`。试过：两种端点方向、两端均为关联自有端点、让 MagicDraw 自己创建关联，均失败。不要再花时间，模型里保留关系，在文档里写明“图中需在界面里拖入”。
+- 其它 `Abstraction`、`InformationFlow`、`ControlFlow` 画线正常。
+
+## 查 API 与插件内容的办法
+
+- 想知道某个构造型/视图类型/包是否存在，别猜，写一个临时探针类（继承 `CommandLine`），用 `run.ps1 -Class 探针 -In 工程 -Log probe.log` 运行：遍历 `UAF` Profile 的构造型（名称、父类、标记值），对候选视图名逐个 `createDiagram`（在 Session 里建完 `cancelSession`），遍历包树。用完删除类文件。
+- 没有 `javap` 时，用系统 JDK 的 `javap`，或写一个反射小类在 MagicDraw 目录下用 `java -cp ".;lib/*"` 运行。
+- 插件内的类名、字符串可 `unzip` 后 `grep -a` 查（如 `UAF 1.2.jar`），可看到视图类型名的候选，但仍要用探针实测。
+
 ## 表格与矩阵类视图：必须配置，否则打开是空的
 
 这类视图不放形状，内容由 MagicDraw 在 GUI 里计算。**不配置就是空图**，这是最容易犯的错（本套件早期版本曾误以为"空是正常的"）。
@@ -74,7 +126,7 @@ MagicDraw 不在默认位置时，先设置环境变量 `MD_HOME`。每步约 1~
 | 系统功能与作战活动映射 | Function | OperationalActivity | `Implements`（Function→活动） |
 | 资源与作战活动映射 | Resource | OperationalActivity | 内联表达式：资源 `IsCapableToPerform` Function，Function `Implements` 活动 |
 
-4. 默认视图类型不合用时要重配。例：`Actual Strategic Phases to Capabilities Mapping Matrix` 的准则是 `Phases`（阶段→能力），不能用来做"能力×需求"。`PostMatrix.reconfigCapReq` 示范了怎么改：`setElementTypes` 设行列类型，`setDependencyCriteria` 写入准则 XML（stereotype 属性为 `SysML::Satisfy` 的 ID）。
+4. 默认视图类型不合用时要重配。例：`Actual Strategic Phases to Capabilities Mapping Matrix` 的准则是 `Phases`（阶段→能力），不能用来做"能力×需求"。`PostMatrix` 里的 `CUSTOM` 表按**视图名**登记 `{行 profile, 行构造型, 列 profile, 列构造型, 关系 profile, 关系构造型}`，`reconfig` 用 `setElementTypes` 设行列类型，`setDependencyCriteria` 写入准则 XML（stereotype 属性为关系构造型的 ID，方向 DIRECT：client 为行，supplier 为列）。**新增自定义矩阵三步**：生成块里用任一现成的 `*Mapping Matrix` 类型建一张视图并起固定名字；在 `CUSTOM` 登记该名字；模型里建好匹配的关系（所在包要对）。已用过的组合：能力×需求（Satisfy）、作战活动×任务线程、度量×目标、度量×作战活动、度量×资源（后四者均为 Trace）。
 5. 无界面模式下无法计算矩阵（`MatrixDataHelper.buildMatrix` 恒抛 NPE，官方示例同样），所以只能核对"配置 + 关系数据"，见 uaf-mdzip-verify。
 
 ### 表格视图（`Dictionary`、`Operational Constraints` 等 `DiagramTable`）
@@ -111,6 +163,11 @@ MagicDraw 不在默认位置时，先设置环境变量 `MD_HOME`。每步约 1~
 | 图形类视图 shapes=0 | 查"无法在图中放置"警告（元素类型不被该视图接受） |
 | 矩阵/表格打开是空的 | 见上方"表格与矩阵类视图"：范围标志、行元素、匹配的关系三者缺一不可 |
 | 泳道 NPE | 第二参数用空列表 |
+| 自定义构造型保存后丢失 | 用了 `createStereotype(Project,…)`，没有挂在自建 Profile 下 |
+| 流程边创建时报“端点不存在” | 节点 id 与 `chain` 生成的 id 对不上（`idp + 序号`），或升级链子图的 id 与主图重名 |
+| 组合关联在图里连不上 | 已知做不到，见“图里画不出来的关系” |
+| 脚本里中文替换“找不到字符串” | 控制台代码页导致，见“Windows 编码陷阱” |
+| 重跑后元素数对不上 | 常量表与位置数组/映射表长度不一致，见“迭代修改与重新生成” |
 | 误动了用户正在用的 MagicDraw | 结束进程前先看 `Get-CimInstance Win32_Process` 的启动时间与命令行，只结束自己启动的 PID |
 
 ## 清理

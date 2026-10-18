@@ -12,6 +12,7 @@ Abstraction 的 client = 源（被指的那一方），supplier = 目标。`U.ab
 | `Phases` | Abstraction | ActualEnterprisePhase / ActualEnduringTask | Capability / Goal | 阶段与能力 |
 | `Forecast` | Dependency | 同类型元素（新）→（旧） | 同类型 | 演进预测 |
 | `Satisfy`（SysML） | Abstraction | 满足方（**Capability**/活动/资源，client） | **Requirement**（supplier） | 需求追溯；"能力×需求"矩阵以它为准则 |
+| `Trace`（UML Standard Profile） | Abstraction | **下层元素**（client） | **上层元素**（supplier） | 任务工程链追溯：想定→目标、任务→目标、OA→任务、度量→目标/活动/资源，见下 |
 | `OperationalExchange` | InformationFlow | source=执行者，target=执行者 | conveyed=InformationItem | 作战信息交换 |
 | `ResourceExchange` | InformationFlow | 资源 | 资源 | 资源接口流 |
 | `ServiceExchange` | InformationFlow | 服务 | 服务 | 服务调用 |
@@ -40,3 +41,20 @@ ResourceArtifact --Exhibits--> Capability
 ## 建关系前先对照矩阵
 
 每张要出现的 UAF 矩阵都有固定的"行类型、列类型、准则"。规划规格表时先查 `uaf-mdzip-codegen` 里的矩阵对应表，确保模型里有匹配的关系；关系方向建反或构造型建错，矩阵就是空的。
+
+## 任务工程链的追溯（均为 UML `Trace`，下层为 client）
+
+| 源（client） | 目标（supplier） |
+|---|---|
+| 想定片段（StrategicPhase） | 目标（EnterpriseGoal） |
+| 任务 MT | 目标 |
+| 任务工程线程 MET | 任务 MT |
+| 作战活动 OA | 任务 MT |
+| MOE | 目标 |
+| MOP | MOE、作战活动 |
+| TPM | MOP（或 MOE）、资源类型 |
+
+三条易错点：
+- **Satisfy 的 client 是满足方**。写成“目标 Satisfy 任务”方向就反了；本链统一用 Trace。
+- **`Implements` 在本模型里连的是 Function→OperationalActivity**，不要用它连“任务→资源”。资源与任务的关系由“资源→功能→作战活动→任务”推导，不另建。
+- 同一模型里 MT 是“任务”（`MissionTask`），隶属一个 `MissionThread`；不要把每个 MT 都标成线程。

@@ -28,13 +28,15 @@ public class B3 {
         {"OA14", "声学探测识别", "aco", "9", "方位角、速度(IE5)"},
         {"OA15", "威胁评估与态势显示", "cp", "10/12", "威胁等级、全流程态势(IE9)"},
         {"OA16", "跟踪任务移交(接续)", "edge", "11", "移交指令(IE6、IE8)"},
-        {"OA17", "拦截效果评估(补充)", "cp", "补充", "评估结论，触发二次打击或结束"}};
+        {"OA17", "拦截效果评估(补充)", "cp", "补充", "评估结论，触发二次打击或结束"},
+        {"OA18", "电子干扰与驱离", "jam", "5/11", "干扰状态与效果(IE15、IE18)"},
+        {"OA19", "无人机空中拦截", "air", "5/11", "起飞与拦截结果(IE17、IE19)"}};
 
     /** 活动 → 能力 (MapsToCapability) */
     static final String[][] MAP = {
         {"OA1", "C1"}, {"OA2", "C2"}, {"OA3", "C5"}, {"OA4", "C5"}, {"OA5", "C1"}, {"OA5", "C2"}, {"OA5", "C6"},
         {"OA6", "C7"}, {"OA7", "C3"}, {"OA8", "C5"}, {"OA9", "C8"}, {"OA10", "C8"}, {"OA11", "C7"},
-        {"OA12", "C9"}, {"OA13", "C9"}, {"OA14", "C4"}, {"OA15", "C7"}, {"OA16", "C6"}, {"OA17", "C7"}};
+        {"OA12", "C9"}, {"OA13", "C9"}, {"OA14", "C4"}, {"OA15", "C7"}, {"OA16", "C6"}, {"OA17", "C7"}, {"OA18", "C10"}, {"OA19", "C11"}};
 
     /** 流程 A(FPV)的节点：id, 类型, 引用(OA key 或标签), 泳道, 列 */
     static final String[][] NODES_A = {
@@ -46,9 +48,13 @@ public class B3 {
         {"m1", "mrg", "", "eo", "8"}, {"OA7", "oa", "OA7", "eo", "9"}, {"OA8", "oa", "OA8", "edge", "10"},
         {"d1", "dec", "识别置信度达阈值?", "edge", "11"},
         {"OA9", "oa", "OA9", "cp", "12"}, {"OA10", "oa", "OA10", "cmdr", "13"}, {"m2", "mrg", "", "cp", "13"},
-        {"OA11", "oa", "OA11", "cp", "14"}, {"OA12", "oa", "OA12", "sol", "15"}, {"OA13", "oa", "OA13", "sol", "16"},
-        {"OA17", "oa", "OA17", "cp", "17"}, {"d2", "dec", "已捕获?", "cp", "18"},
-        {"j3", "join", "", "cp", "19"}, {"fin", "fin", "", "cp", "20"}};
+        {"OA11", "oa", "OA11", "cp", "14"},
+        {"dx", "dec", "目标依赖射频链路?", "cp", "15"}, {"OA18", "oa", "OA18", "jam", "16"},
+        {"dy", "dec", "干扰奏效?", "cp", "17"}, {"mi", "mrg", "", "air", "18"},
+        {"OA19", "oa", "OA19", "air", "19"}, {"dz", "dec", "拦截成功?", "cp", "20"},
+        {"mg", "mrg", "", "sol", "21"}, {"OA12", "oa", "OA12", "sol", "22"}, {"OA13", "oa", "OA13", "sol", "23"},
+        {"ms", "mrg", "", "cp", "24"}, {"OA17", "oa", "OA17", "cp", "25"}, {"d2", "dec", "目标已处置?", "cp", "26"},
+        {"j3", "join", "", "cp", "27"}, {"fin", "fin", "", "cp", "28"}};
 
     /** 流程 A 的控制流：源, 目标, 守卫 */
     static final String[][] EDGES_A = {
@@ -57,8 +63,12 @@ public class B3 {
         {"f2", "OA5r", null}, {"f2", "OA5e", null}, {"f2", "OA15", null}, {"f2", "m1", null},
         {"m1", "OA7", null}, {"OA7", "OA8", null}, {"OA8", "d1", null},
         {"d1", "m1", "否：继续监视"}, {"d1", "OA9", "是"}, {"OA9", "OA10", null}, {"OA10", "m2", null},
-        {"m2", "OA11", null}, {"OA11", "OA12", null}, {"OA12", "OA13", null}, {"OA13", "OA17", null},
-        {"OA17", "d2", null}, {"d2", "m2", "否：二次打击"}, {"d2", "j3", "是"},
+        {"m2", "OA11", null}, {"OA11", "dx", null},
+        {"dx", "OA18", "是：先干扰"}, {"dx", "mi", "否：不受干扰"}, {"OA18", "dy", null},
+        {"dy", "ms", "是"}, {"dy", "mi", "否：超过 P_JAM_W 未奏效"},
+        {"mi", "OA19", null}, {"OA19", "dz", null}, {"dz", "ms", "是"}, {"dz", "mg", "否：升级发射枪"},
+        {"mg", "OA12", null}, {"OA12", "OA13", null}, {"OA13", "ms", null},
+        {"ms", "OA17", null}, {"OA17", "d2", null}, {"d2", "m2", "否：二次处置"}, {"d2", "j3", "是"},
         {"OA5r", "j3", null}, {"OA5e", "j3", null}, {"OA15", "j3", null}, {"j3", "fin", null}};
 
     /** 流程 B(巡飞弹)的节点 */
@@ -66,15 +76,23 @@ public class B3 {
         {"init", "init", "", "esm", "0"}, {"OA2", "oa", "OA2", "esm", "1"},
         {"OA3", "oa", "OA3", "edge", "2"}, {"OA4", "oa", "OA4", "edge", "3"}, {"f1", "fork", "", "edge", "4"},
         {"OA14", "oa", "OA14", "aco", "5"}, {"OA7", "oa", "OA7", "eo", "5"}, {"OA6", "oa", "OA6", "edge", "6"},
-        {"OA15", "oa", "OA15", "cp", "7"}, {"OA16", "oa", "OA16", "edge", "8"}, {"m1", "mrg", "", "sol", "8"},
-        {"OA12", "oa", "OA12", "sol", "9"}, {"OA13", "oa", "OA13", "sol", "10"}, {"OA17", "oa", "OA17", "cp", "11"},
-        {"d1", "dec", "已捕获?", "cp", "12"}, {"j1", "join", "", "cp", "13"}, {"fin", "fin", "", "cp", "14"}};
+        {"OA15", "oa", "OA15", "cp", "7"}, {"OA16", "oa", "OA16", "edge", "8"},
+        {"dx", "dec", "目标依赖射频链路?", "cp", "9"}, {"OA18", "oa", "OA18", "jam", "10"},
+        {"dy", "dec", "干扰奏效?", "cp", "11"}, {"mi", "mrg", "", "air", "12"},
+        {"OA19", "oa", "OA19", "air", "13"}, {"dz", "dec", "拦截成功?", "cp", "14"},
+        {"mg", "mrg", "", "sol", "15"}, {"OA12", "oa", "OA12", "sol", "16"}, {"OA13", "oa", "OA13", "sol", "17"},
+        {"ms", "mrg", "", "cp", "18"}, {"OA17", "oa", "OA17", "cp", "19"},
+        {"d1", "dec", "目标已处置?", "cp", "20"}, {"j1", "join", "", "cp", "21"}, {"fin", "fin", "", "cp", "22"}};
 
     static final String[][] EDGES_B = {
         {"init", "OA2", null}, {"OA2", "OA3", null}, {"OA3", "OA4", null}, {"OA4", "f1", null},
         {"f1", "OA14", null}, {"f1", "OA7", null}, {"OA14", "OA6", null}, {"OA6", "OA15", null},
-        {"OA15", "OA16", null}, {"OA16", "m1", null}, {"m1", "OA12", null}, {"OA12", "OA13", null},
-        {"OA13", "OA17", null}, {"OA17", "d1", null}, {"d1", "m1", "否：再次拦截"}, {"d1", "j1", "是"},
+        {"OA15", "OA16", null}, {"OA16", "dx", null},
+        {"dx", "OA18", "是：先干扰"}, {"dx", "mi", "否：不受干扰"}, {"OA18", "dy", null},
+        {"dy", "ms", "是"}, {"dy", "mi", "否：超过 P_JAM_W 未奏效"},
+        {"mi", "OA19", null}, {"OA19", "dz", null}, {"dz", "ms", "是"}, {"dz", "mg", "否：升级发射枪"},
+        {"mg", "OA12", null}, {"OA12", "OA13", null}, {"OA13", "ms", null},
+        {"ms", "OA17", null}, {"OA17", "d1", null}, {"d1", "dx", "否：再次处置"}, {"d1", "j1", "是"},
         {"OA7", "j1", null}, {"j1", "fin", null}};
 
     static final int X0 = 140, STEP = 170, LANE_H = 140;
@@ -95,9 +113,9 @@ public class B3 {
         }
 
         buildFlow(pr, "flowA", "FPV 无人机反制作战流程",
-            new String[]{"radar", "esm", "eo", "edge", "cp", "cmdr", "sol"}, NODES_A, EDGES_A);
+            new String[]{"radar", "esm", "eo", "edge", "cp", "cmdr", "sol", "jam", "air"}, NODES_A, EDGES_A);
         buildFlow(pr, "flowB", "巡飞弹反制作战流程",
-            new String[]{"esm", "eo", "aco", "edge", "cp", "sol"}, NODES_B, EDGES_B);
+            new String[]{"esm", "eo", "aco", "edge", "cp", "sol", "jam", "air"}, NODES_B, EDGES_B);
 
         // Op-Tr：活动 → 能力 (MapsToCapability)；执行者 IsCapableToPerform 活动
         D dtr = new D("Operational Activities to Capabilities Mapping Matrix", tr, "作战活动与能力映射", 1500);

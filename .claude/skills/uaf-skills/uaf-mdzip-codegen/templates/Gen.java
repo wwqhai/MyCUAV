@@ -15,9 +15,9 @@ import java.io.PrintWriter;
  * 使用时在 BLOCKS 里按依赖顺序登记各块（B1..Bn），每块是 Runnable。
  */
 public class Gen extends CommandLine {
-    /** 按依赖顺序执行的建模块。新增块时在此追加。 */
-    static final Runnable[] BLOCKS = {B1::run, B2::run, B3::run, B4::run, B5::run};
-    static final String[] NAMES = {"B1", "B2", "B3", "B4", "B5"};
+    /** 按依赖顺序执行的建模块。新增块时在此追加，BLOCKS 与 NAMES 同步；块之间只通过 U.reg/U.get 的 key 通信。B6 为任务工程链示例，没有对应的块文件时删去。 */
+    static final Runnable[] BLOCKS = {B1::run, B2::run, B3::run, B4::run, B5::run, B6::run};
+    static final String[] NAMES = {"B1", "B2", "B3", "B4", "B5", "B6"};
 
     public static void main(String[] a) throws Exception {
         new Gen().launch(a);

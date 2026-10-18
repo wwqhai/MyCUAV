@@ -18,18 +18,21 @@ public class B4 {
         {"s6", "跟踪移交服务", "edge", "探测节点、指挥所", "OA16"},
         {"s7", "作战方案生成服务", "cp", "指挥员", "OA9,OA10"},
         {"s8", "态势显示服务", "cp", "指挥员", "OA15,OA17"},
-        {"s9", "打击任务分发服务", "cp", "单兵拦截节点", "OA11"},
-        {"s10", "拦截执行服务", "sol", "指挥所", "OA12,OA13"}};
+        {"s9", "打击任务分发服务", "cp", "单兵拦截节点、干扰节点、空中拦截节点", "OA11"},
+        {"s10", "拦截执行服务", "sol", "指挥所", "OA12,OA13"},
+        {"s11", "电子干扰服务", "jam", "指挥所", "OA18"},
+        {"s12", "空中拦截服务", "air", "指挥所", "OA19"}};
 
     /** 服务调用：调用方 → 被调用方 */
     static final String[][] SV_CALL = {
         {"s5", "s1"}, {"s5", "s2"}, {"s5", "s3"}, {"s5", "s4"}, {"s6", "s5"}, {"s7", "s5"},
-        {"s8", "s5"}, {"s9", "s7"}, {"s10", "s9"}, {"s8", "s10"}};
+        {"s8", "s5"}, {"s9", "s7"}, {"s10", "s9"}, {"s8", "s10"},
+        {"s11", "s9"}, {"s12", "s9"}, {"s8", "s11"}, {"s8", "s12"}};
 
     /** 服务展现能力 */
     static final String[][] SV_CAP = {
         {"s1", "C1"}, {"s2", "C2"}, {"s3", "C3"}, {"s4", "C4"}, {"s5", "C5"}, {"s6", "C6"},
-        {"s7", "C8"}, {"s8", "C7"}, {"s9", "C7"}, {"s10", "C9"}};
+        {"s7", "C8"}, {"s8", "C7"}, {"s9", "C7"}, {"s10", "C9"}, {"s11", "C10"}, {"s12", "C11"}};
 
     /** 资源：key, 名称, 数量, 功能表(功能=实现的作战活动，竖线分隔) */
     static final String[][] RS = {
@@ -41,20 +44,24 @@ public class B4 {
         {"r_gun", "反无人机发射枪", "20", "任务接收与自动部署=OA12|瞄准解算与发射=OA13"},
         {"r_c2", "指挥系统(含AI)", "1", "态势生成显示=OA15|威胁评估=OA15|方案生成=OA9|任务分发=OA11|效果评估=OA17"},
         {"r_cp", "指挥所", "1", "决策席位支撑=OA10"},
-        {"r_net", "战场通信网络", "1", "信息传输=OA6"}};
+        {"r_net", "战场通信网络", "1", "信息传输=OA6"},
+        {"r_jam", "干扰机", "5", "任务接收=OA18|信号分析与干扰样式选择=OA18|射频干扰发射=OA18|干扰效果监测=OA18"},
+        {"r_uav", "拦截无人机", "10", "任务接收与起飞=OA19|飞向目标与末端制导=OA19|拦截执行=OA19|状态回传=OA19"}};
 
     /** 资源接口流：编号, 源, 目标, 内容 */
     static final String[][] RS_FLOW = {
         {"RF1", "r_radar", "r_edge", "点迹、航迹"}, {"RF2", "r_esm", "r_edge", "信号特征、方位线"},
         {"RF3", "r_eo", "r_edge", "识别结果"}, {"RF4", "r_aco", "r_edge", "方位角、速度、声纹识别结果"},
         {"RF5", "r_edge", "r_c2", "融合航迹、目标属性、意图、置信度"}, {"RF6", "r_c2", "r_edge", "跟踪监视任务指令"},
-        {"RF7", "r_c2", "r_gun", "打击任务"}, {"RF8", "r_gun", "r_c2", "部署状态、发射与捕获结果"}};
+        {"RF7", "r_c2", "r_gun", "打击任务"}, {"RF8", "r_gun", "r_c2", "部署状态、发射与捕获结果"},
+        {"RF9", "r_c2", "r_jam", "干扰任务：目标航迹、信号特征、干扰样式建议"}, {"RF10", "r_jam", "r_c2", "干扰状态与效果"},
+        {"RF11", "r_c2", "r_uav", "拦截任务：目标航迹、引导信息"}, {"RF12", "r_uav", "r_c2", "起飞与飞行状态、拦截结果"}};
 
     /** 资源展现能力 */
     static final String[][] RS_CAP = {
         {"r_radar", "C1"}, {"r_radar", "C6"}, {"r_esm", "C2"}, {"r_esm", "C6"}, {"r_eo", "C3"}, {"r_eo", "C6"},
         {"r_aco", "C4"}, {"r_edge", "C5"}, {"r_edge", "C6"}, {"r_c2", "C7"}, {"r_c2", "C8"}, {"r_cp", "C8"},
-        {"r_gun", "C9"}, {"r_net", "C7"}};
+        {"r_gun", "C9"}, {"r_net", "C7"}, {"r_jam", "C10"}, {"r_uav", "C11"}};
 
     static void run() {
         services();
@@ -79,7 +86,7 @@ public class B4 {
 
         D dcn = new D("Services Connectivity", cn, "服务连通", 1500);
         int[][] pos = {{30, 60}, {30, 170}, {30, 280}, {30, 390}, {330, 225}, {630, 60}, {630, 225}, {930, 225},
-            {630, 390}, {930, 390}};
+            {630, 390}, {930, 390}, {630, 500}, {930, 500}};
         for (int i = 0; i < SV.length; i++) dcn.at(U.get("sv:" + SV[i][0]), pos[i][0], pos[i][1], 220, 60);
         InformationItem req = U.put(U.F.createInformationItemInstance(), cn);
         req.setName("服务请求/响应");
@@ -153,6 +160,8 @@ public class B4 {
         for (int i = 0; i < ord.length; i++) dcn.at(U.get("rs:" + ord[i]), pos[i][0], pos[i][1], 220, 70);
         dcn.at(U.get("rs:r_cp"), 770, 420, 220, 70);
         dcn.at(U.get("rs:r_net"), 400, 420, 220, 70);
+        dcn.at(U.get("rs:r_jam"), 1100, 330, 220, 70);
+        dcn.at(U.get("rs:r_uav"), 1100, 450, 220, 70);
         Map<String, InformationItem> items = new HashMap<>();
         for (String[] f : RS_FLOW) {
             InformationItem it = items.computeIfAbsent(f[3], k -> {
@@ -165,6 +174,7 @@ public class B4 {
             fl.getInformationTarget().add(U.get("rs:" + f[2]));
             fl.getConveyed().add(it);
             fl.setName(f[0] + " " + f[3]);
+            U.reg("rf:" + f[0], fl);
             U.apply(fl, "UAF", "ResourceExchange");
             dcn.link(fl, U.get("rs:" + f[1]), U.get("rs:" + f[2]));
         }

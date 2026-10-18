@@ -16,8 +16,8 @@ import java.io.PrintWriter;
  */
 public class Gen extends CommandLine {
     /** 按依赖顺序执行的建模块。新增块时在此追加。 */
-    static final Runnable[] BLOCKS = {B1::run, B2::run, B3::run, B4::run, B5::run};
-    static final String[] NAMES = {"B1", "B2", "B3", "B4", "B5"};
+    static final Runnable[] BLOCKS = {B1::run, B2::run, B3::run, B4::run, B5::run, B6::run};
+    static final String[] NAMES = {"B1", "B2", "B3", "B4", "B5", "B6"};
 
     public static void main(String[] a) throws Exception {
         new Gen().launch(a);

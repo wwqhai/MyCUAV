@@ -17,6 +17,8 @@ public class B2 {
         {"cp", "指挥所", "OperationalPerformer", "态势显示、威胁评估、方案生成、任务分发", "1"},
         {"cmdr", "指挥员", "Post", "作战决策", "1"},
         {"sol", "单兵拦截节点", "OperationalPerformer", "自动部署发射枪、发射拦截", "20"},
+        {"jam", "干扰节点", "OperationalPerformer", "对目标射频链路实施干扰、驱离", "5"},
+        {"air", "空中拦截节点", "OperationalPerformer", "拦截无人机升空接近并拦截目标", "10"},
         {"fpv", "敌方FPV无人机", "OperationalPerformer", "侦察(外部目标)", "1"},
         {"lm", "敌方巡飞弹", "OperationalPerformer", "攻击(外部目标)", "3"}};
 
@@ -41,12 +43,20 @@ public class B2 {
         {"IE11", "cp", "sol", "打击任务(目标航迹、射击诸元、弹种建议、部署指令)"},
         {"IE12", "sol", "cp", "部署状态、发射报告、捕获或毁伤结果"},
         {"IE13a", "sol", "fpv", "捕获网/近炸弹(物理作用)"},
-        {"IE13b", "sol", "lm", "捕获网/近炸弹(物理作用)"}};
+        {"IE13b", "sol", "lm", "捕获网/近炸弹(物理作用)"},
+        {"IE14", "cp", "jam", "干扰任务(目标航迹、信号特征、干扰样式建议)"},
+        {"IE15", "jam", "cp", "干扰状态与效果"},
+        {"IE16", "cp", "air", "拦截任务(目标航迹、引导信息)"},
+        {"IE17", "air", "cp", "起飞与飞行状态、拦截结果"},
+        {"IE18a", "jam", "fpv", "射频干扰(物理作用)"},
+        {"IE18b", "jam", "lm", "射频干扰(物理作用)"},
+        {"IE19a", "air", "fpv", "空中拦截(物理作用)"},
+        {"IE19b", "air", "lm", "空中拦截(物理作用)"}};
 
     /** 执行者展现能力 (Exhibits) */
     static final String[][] EXH = {
         {"radar", "C1"}, {"radar", "C6"}, {"esm", "C2"}, {"esm", "C6"}, {"eo", "C3"}, {"eo", "C6"}, {"aco", "C4"},
-        {"edge", "C5"}, {"edge", "C6"}, {"cp", "C7"}, {"cp", "C8"}, {"cmdr", "C8"}, {"sol", "C9"}};
+        {"edge", "C5"}, {"edge", "C6"}, {"cp", "C7"}, {"cp", "C8"}, {"cmdr", "C8"}, {"sol", "C9"}, {"jam", "C10"}, {"air", "C11"}};
 
     static final Map<String, InformationItem> ITEMS = new LinkedHashMap<>();
 
@@ -67,8 +77,8 @@ public class B2 {
         dtx.at(root, 640, 30, 240, 60);
         int x = 30;
         for (String[] p : PERF) {
-            dtx.at(U.get("op:" + p[0]), x, 200, 130, 60);
-            x += 148;
+            dtx.at(U.get("op:" + p[0]), x, 200, 120, 60);
+            x += 128;
         }
 
         // Op-Sr：作战结构（体系组成及数量）
@@ -76,8 +86,8 @@ public class B2 {
         dsr.at(root, 640, 30, 240, 60);
         x = 30;
         for (String[] p : PERF) {
-            dsr.at(U.get("op:" + p[0]), x, 200, 130, 60);
-            x += 148;
+            dsr.at(U.get("op:" + p[0]), x, 200, 120, 60);
+            x += 128;
         }
         for (String[] p : PERF) U.comp(root, U.get("op:" + p[0]), p[0], p[4]);
 
@@ -91,9 +101,9 @@ public class B2 {
 
         // Op-Cn：作战连通
         D dcn = new D("Operational Connectivity", cn, "作战连通", 1500);
-        String[] order = {"fpv", "lm", "radar", "esm", "eo", "aco", "edge", "cp", "cmdr", "sol"};
+        String[] order = {"fpv", "lm", "radar", "esm", "eo", "aco", "edge", "cp", "cmdr", "sol", "jam", "air"};
         int[][] pos = {{30, 60}, {30, 520}, {330, 30}, {330, 150}, {330, 270}, {330, 390}, {650, 210},
-            {960, 210}, {1250, 60}, {960, 450}};
+            {960, 210}, {1250, 60}, {960, 450}, {1250, 330}, {1250, 450}};
         for (int i = 0; i < order.length; i++) dcn.at(U.get("op:" + order[i]), pos[i][0], pos[i][1], 190, 70);
         Set<String> drawn = new HashSet<>();
         for (String[] ie : IE) {

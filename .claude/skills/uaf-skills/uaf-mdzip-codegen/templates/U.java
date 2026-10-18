@@ -202,4 +202,28 @@ public class U {
         c.getOwnedAttribute().add(p);
         return p;
     }
+
+    /** 模型内的自定义 Profile，首次调用时创建并应用到根模型。UAF 1.2 缺少的概念(如 Mission*)可放这里。 */
+    static Profile extProfile;
+
+    /**
+     * 在模型内“扩展”Profile 里创建一个构造型，基类为 UML 元类 base(如 "Class")。失败返回 null，调用方应退化为普通元素。
+     * 注意：必须挂在自建 Profile 下；用 createStereotype(Project,…) 创建的构造型没有 owner，不会保存。
+     */
+    static Stereotype customStereotype(String profileName, String name, String base) {
+        try {
+            if (extProfile == null) {
+                extProfile = put(F.createProfileInstance(), P.getPrimaryModel());
+                extProfile.setName(profileName);
+                com.nomagic.uml2.ext.magicdraw.mdprofiles.ProfileApplication pa = F.createProfileApplicationInstance();
+                pa.setApplyingPackage(P.getPrimaryModel());
+                pa.setAppliedProfile(extProfile);
+            }
+            Class meta = StereotypesHelper.getMetaClassByName(P, base);
+            return StereotypesHelper.createStereotype(extProfile, name, java.util.Arrays.asList(meta));
+        } catch (Throwable t) {
+            log("警告: 创建自定义构造型失败 " + name + " : " + t);
+            return null;
+        }
+    }
 }

@@ -68,11 +68,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File run.ps1 -Class Verify -In "D
 | `sax parsing fail … must start and end within the same entity` | 被打开的 mdzip 损坏（例如拷贝不完整），换文件对比 |
 | 矩阵 `buildMatrix` 抛 NPE | 无界面环境限制，不是模型问题 |
 
+## 六点五、迭代后的核对（重跑生成器之后）
+
+- `ST` 里新增构造型要与常量表一致：自定义构造型（如 `MissionTask`）、`EnterpriseGoal`、`StrategicPhase`、`MeasurementSet`、`Trace`、`FunctionAction`、`ActualResource`。模板自带的 `Measurement`、`Trace` 等也会计入，先记下上一版的数，再核对增量。
+- `Trace` 总数 = 各追溯组数量之和（逐组相加核对，如 OA→MT 19、度量各组），不对说明某组关系漏建或重复建。
+- `post.log` 要有“已重配 <视图名>: 行=… 列=… 准则=…”，缺一行说明该矩阵没登记进 `PostMatrix.CUSTOM`，或视图名不一致；出现“找不到构造型”说明 profile 名或构造型名写错。
+- 流程图 `shapes` 约等于节点数加边数再加泳道，明显偏小说明有节点放置失败，查 `gen.log` 的警告。
+- 新增的度量表若 `shapes=0` 属正常，但要核对 `rowElements`/`scope` 已配置。
+- 全新进程能打开、`BAD 0` 之外，还要读 `gen.log` 无任何“警告”“失败”。
+
 ## 七、不能验证的部分（交付时必须如实说明）
 
 - 版面美观度、连线走向：只能在 GUI 里看。
 - 依赖矩阵和表格在界面中实际显示的内容。
 - 报表（词典、约束）导出效果。
+- 度量表、追溯矩阵在界面中显示出的度量与勾；资源泳道流程图的布局与连线走向。
 
 ## 诊断小技巧
 

@@ -17,15 +17,33 @@ public class D {
     final Map<Element, ShapeElement> shapes = new LinkedHashMap<>();
     int cursorX = 30, cursorY = 30, rowH = 0;
     final int maxW;
+    final List<Element> auto = new ArrayList<>();
+
+    /** 删除创建视图时自动产生的多余元素。必须在 setOwner 把视图改挂到自己的行为之后调用。 */
+    void dropAuto() {
+        for (Element e : auto) {
+            try {
+                U.M.removeElement(e);
+            } catch (Exception ex) {
+                U.log("警告: 清理自动创建元素失败 " + e.getHumanName() + " : " + ex);
+            }
+        }
+        auto.clear();
+    }
 
     D(String uafViewType, Package owner, String name, int maxWidth) {
         this.maxW = maxWidth;
+        Set<Element> before = new HashSet<>(owner.getOwnedElement());
         try {
             this.diagram = U.M.createDiagram(uafViewType, owner);
             this.diagram.setName(name);
         } catch (Exception e) {
             throw new RuntimeException("创建视图失败 " + uafViewType + ": " + e, e);
         }
+        // 记录创建视图时自动产生的元素（如流程图自带的空活动），行为类视图改挂后由 dropAuto 清理
+        for (Element e : owner.getOwnedElement())
+            if (!before.contains(e) && e != diagram) auto.add(e);
+        if (!auto.isEmpty()) U.log("视图 " + name + " 自动创建元素 " + auto.size() + " 个");
         this.dpe = U.P.getDiagram(diagram);
         if (dpe == null) throw new IllegalStateException("无法获取视图展示元素: " + name);
         dpe.open();

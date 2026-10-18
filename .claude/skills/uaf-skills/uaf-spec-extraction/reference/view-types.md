@@ -17,6 +17,16 @@
 
 名称不在表内时：去 `samples/UAF/UAF sample.mdzip` 的主模型里搜 `type='...' umlType=` 核对；也可从 `profiles/UAF_Customization.mdzip` 提取。
 
+## 已用探针实测（MagicDraw 2022x + UAF 1.2）
+
+可建：`Strategic Taxonomy`、`Resources Process Flow`、`Resources Connectivity`、`Resources Sequences`、`Typical Measurements Table`、`Actual Measurements Table`。
+
+不可建（`Unknown diagram type`）：`Resource Process Flow`（单数）、`Pm-Me Typical Measurements Table`、`Pm-Me Actual Measurements Table`、`Measurements Table`。插件字符串里能搜到带 `Pm-Me` 的名称，那是显示名，不是 `createDiagram` 的类型名。
+
+Pm-Me 在 UAF 1.2 里是**表**（典型度量表、实际度量表），不是矩阵。
+
+插件字符串里还检出 `Resources Internal Connectivity`、`Operational Internal Connectivity`（组合结构图），本套件尚未实践。
+
 ## 内容性质（决定要不要额外配置）
 
 - **图形类**（放形状与连线）：Taxonomy、Structure、Connectivity、Processes、Process Flow、Sequences、States、Information。创建后用 `D.at/add/link` 放元素；建了不放元素就是空图。
@@ -34,4 +44,4 @@
 
 ## 视点包（模板里已有，按名称取）
 
-`Strategy`、`Operational`、`Services`、`Personnel`、`Resources`、`Security`、`Projects`、`Actual Resources`、`Standards`、`Summary & Overview`、`Architecture Management`。每个下面有 `* Taxonomy / Structure / Connectivity / Processes / States / Sequences / Constraints / Traceability / Information / Parameters / Roadmap / Motivation` 子包，用 `U.pkg("Operational", "Operational Structure")` 取。`Requirements` 包模板里没有，需自建。
+`Strategy`、`Operational`、`Services`、`Personnel`、`Resources`、`Security`、`Projects`、`Actual Resources`、`Standards`、`Summary & Overview`、`Architecture Management`。各视点下的度量包名为 `Strategic Parameters`、`Operational Parameters`、`Services Parameters`、`Personnel Parameters`、`Resources Parameters`、`Actual Resources Parameters` 等。每个下面有 `* Taxonomy / Structure / Connectivity / Processes / States / Sequences / Constraints / Traceability / Information / Parameters / Roadmap / Motivation` 子包，用 `U.pkg("Operational", "Operational Structure")` 取。`Requirements` 包模板里没有，需自建。

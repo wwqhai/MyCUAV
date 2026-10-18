@@ -27,27 +27,41 @@ public class PostMatrix extends CommandLine {
         new PostMatrix().launch(a);
     }
 
-    /** 能力×需求追溯：行 = Capability，列 = SysML Requirement，准则 = SysML Satisfy（client=能力，supplier=需求）。 */
-    static void reconfigCapReq(Project p, PersistenceManager m, List<String> out) {
-        Stereotype cap = StereotypesHelper.getStereotype(p, "Capability", StereotypesHelper.getProfile(p, "UAF"));
-        Stereotype req = StereotypesHelper.getStereotype(p, "Requirement", StereotypesHelper.getProfile(p, "SysML"));
-        Stereotype sat = StereotypesHelper.getStereotype(p, "Satisfy", StereotypesHelper.getProfile(p, "SysML"));
+    /** 按名称重配的矩阵：名称 → {行 profile, 行构造型, 列 profile, 列构造型, 关系 profile, 关系构造型}。client=行，supplier=列。 */
+    static final java.util.Map<String, String[]> CUSTOM = new java.util.LinkedHashMap<>();
+    static {
+        CUSTOM.put("能力与需求追溯", new String[]{"UAF", "Capability", "SysML", "Requirement", "SysML", "Satisfy"});
+        CUSTOM.put("作战活动与任务线程追溯", new String[]{"UAF", "OperationalActivity", "CUAV扩展", "MissionTask", "UML Standard Profile", "Trace"});
+        CUSTOM.put("度量与目标追溯", new String[]{"UAF", "Measurement", "UAF", "EnterpriseGoal", "UML Standard Profile", "Trace"});
+        CUSTOM.put("度量与作战活动追溯", new String[]{"UAF", "Measurement", "UAF", "OperationalActivity", "UML Standard Profile", "Trace"});
+        CUSTOM.put("度量与资源追溯", new String[]{"UAF", "Measurement", "UAF", "ResourceArtifact", "UML Standard Profile", "Trace"});
+    }
+
+    /** 行 = 行构造型，列 = 列构造型，准则 = 关系构造型（DIRECT：client 为行，supplier 为列）。 */
+    static void reconfig(Project p, PersistenceManager m, String name, String[] c, List<String> out) {
+        Stereotype cap = StereotypesHelper.getStereotype(p, c[1], StereotypesHelper.getProfile(p, c[0]));
+        Stereotype req = StereotypesHelper.getStereotype(p, c[3], StereotypesHelper.getProfile(p, c[2]));
+        Stereotype sat = StereotypesHelper.getStereotype(p, c[5], StereotypesHelper.getProfile(p, c[4]));
+        if (cap == null || req == null || sat == null) {
+            out.add("警告: 矩阵 " + name + " 找不到构造型 行=" + cap + " 列=" + req + " 关系=" + sat);
+            return;
+        }
         m.getRowSettings().setElementTypes(new ArrayList<Element>(java.util.Collections.singletonList(cap)));
         m.getColumnSettings().setElementTypes(new ArrayList<Element>(java.util.Collections.singletonList(req)));
         String q = "\"";
         String xml = "<?xml version=" + q + "1.0" + q + " encoding=" + q + "UTF-8" + q + " standalone=" + q + "yes" + q + "?>"
             + "<callExpressionSpecification includeCustomTypes=" + q + "true" + q + " includeSubtypes=" + q + "false" + q
             + " xmlns=" + q + "http://www.nomagic.com/schemas/MagicDraw/StructuredExpression/2013" + q + ">"
-            + "<taggedValues><entry key=" + q + "name" + q + "><value>Satisfy</value></entry></taggedValues>"
+            + "<taggedValues><entry key=" + q + "name" + q + "><value>" + sat.getName() + "</value></entry></taggedValues>"
             + "<argument xsi:type=" + q + "lookupExpressionSpecification" + q + " symbol=" + q + "THIS" + q
             + " xmlns:xsi=" + q + "http://www.w3.org/2001/XMLSchema-instance" + q + "/>"
             + "<expression xsi:type=" + q + "dslRelationExpressionSpecification" + q + " stereotype=" + q + sat.getID() + q
             + " direction=" + q + "DIRECT" + q + " includeCustomTypes=" + q + "true" + q + " includeSubtypes=" + q + "true" + q
             + " xmlns:xsi=" + q + "http://www.w3.org/2001/XMLSchema-instance" + q + ">"
-            + "<taggedValues><entry key=" + q + "name" + q + "><value>Satisfy</value></entry></taggedValues>"
+            + "<taggedValues><entry key=" + q + "name" + q + "><value>" + sat.getName() + "</value></entry></taggedValues>"
             + "</expression></callExpressionSpecification>";
         m.getMatrixSettings().setDependencyCriteria(new ArrayList<String>(java.util.Collections.singletonList(xml)));
-        out.add("已重配 能力与需求追溯: 行=Capability 列=Requirement 准则=Satisfy(" + sat.getID() + ")");
+        out.add("已重配 " + name + ": 行=" + c[1] + " 列=" + c[3] + " 准则=" + sat.getName() + "(" + sat.getID() + ")");
     }
 
     @Override
@@ -69,7 +83,7 @@ public class PostMatrix extends CommandLine {
                 if (!StereotypesHelper.getStereotypes(d).stream().anyMatch(st -> st.getName().contains("Mapping Matrix")
                     || st.getName().contains("Connectivity Matrix"))) continue;
                 PersistenceManager m = new PersistenceManager(d);
-                if ("能力与需求追溯".equals(d.getName())) reconfigCapReq(p, m, out);
+                if (CUSTOM.containsKey(d.getName())) reconfig(p, m, d.getName(), CUSTOM.get(d.getName()), out);
                 m.getMatrixSettings().setTakeWholeModelAsScope(true);
                 m.getRowSettings().setScopeDefined(true);
                 m.getColumnSettings().setScopeDefined(true);
